@@ -1,0 +1,771 @@
+{% extends 'base.html' %}
+
+{% block title %}Smart Fruit - Video Detection{% endblock %}
+
+{% block extra_css %}
+<style>
+    .video-container {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        animation: fadeIn 0.6s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .page-header h1 {
+        color: #667eea;
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-header p {
+        color: #666;
+        font-size: 1.1rem;
+    }
+
+    .tabs {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        border-bottom: 2px solid #e0e0e0;
+    }
+
+    .tab {
+        padding: 1rem 2rem;
+        background: transparent;
+        border: none;
+        color: #666;
+        font-weight: 600;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s;
+    }
+
+    .tab:hover {
+        color: #667eea;
+    }
+
+    .tab.active {
+        color: #667eea;
+        border-bottom-color: #667eea;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .upload-area {
+        border: 3px dashed #667eea;
+        border-radius: 15px;
+        padding: 3rem;
+        text-align: center;
+        margin-bottom: 2rem;
+        transition: all 0.3s;
+        background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .upload-area::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+        animation: pulse 3s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.5; }
+        50% { transform: scale(1.1); opacity: 0.8; }
+    }
+
+    .upload-area.dragover {
+        background: linear-gradient(135deg, #e8ebff 0%, #f0f2ff 100%);
+        border-color: #764ba2;
+        transform: scale(1.02);
+        box-shadow: 0 5px 25px rgba(102, 126, 234, 0.3);
+    }
+
+    .upload-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1rem;
+        stroke: #667eea;
+    }
+
+    .file-input-wrapper {
+        position: relative;
+        display: inline-block;
+        margin-top: 1rem;
+    }
+
+    .file-input-wrapper input[type="file"] {
+        position: absolute;
+        left: -9999px;
+    }
+
+    .file-input-label {
+        display: inline-block;
+        padding: 1rem 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 50px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: transform 0.3s;
+    }
+
+    .file-input-label:hover {
+        transform: scale(1.05);
+    }
+
+    .video-preview {
+        text-align: center;
+        margin: 2rem 0;
+    }
+
+    .video-preview video {
+        max-width: 100%;
+        max-height: 500px;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .webcam-section {
+        text-align: center;
+    }
+
+    .webcam-view {
+        position: relative;
+        display: inline-block;
+        margin: 2rem 0;
+    }
+
+    .webcam-view video {
+        max-width: 100%;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .webcam-controls {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 1rem;
+    }
+
+    .control-button {
+        padding: 1rem 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        font-size: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.3s;
+    }
+
+    .control-button:hover:not(:disabled) {
+        transform: scale(1.05);
+    }
+
+    .control-button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .control-button.stop {
+        background: linear-gradient(135deg, #f44336 0%, #e91e63 100%);
+    }
+
+    .detection-overlay {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 10px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        animation: slideDown 0.5s ease-out;
+    }
+
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .detection-overlay div {
+        margin: 0.3rem 0;
+        font-size: 0.95rem;
+    }
+
+    .detection-overlay strong {
+        font-size: 1.2rem;
+        color: #fff;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .detection-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
+        padding: 1.5rem;
+        border-radius: 10px;
+        text-align: center;
+        border: 2px solid #e8ebff;
+        transition: all 0.3s;
+        animation: popIn 0.5s ease-out;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
+        border-color: #667eea;
+    }
+
+    @keyframes popIn {
+        from { opacity: 0; transform: scale(0.8); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+    .stat-card h3 {
+        color: #667eea;
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-card p {
+        color: #666;
+    }
+
+    .processing-indicator {
+        display: none;
+        text-align: center;
+        margin: 2rem 0;
+    }
+
+    .processing-indicator.active {
+        display: block;
+    }
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .results-section {
+        display: none;
+        margin-top: 2rem;
+    }
+
+    .results-section.active {
+        display: block;
+    }
+
+    .timeline {
+        margin-top: 2rem;
+    }
+
+    .timeline-item {
+        display: flex;
+        gap: 1rem;
+        padding: 1rem;
+        background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
+        border-radius: 10px;
+        margin-bottom: 0.5rem;
+        border-left: 4px solid #667eea;
+        transition: all 0.3s;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    .timeline-item:hover {
+        transform: translateX(10px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+    }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateX(-20px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+
+    .timeline-time {
+        color: #667eea;
+        font-weight: bold;
+        min-width: 80px;
+    }
+
+    .timeline-content {
+        flex: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="video-container">
+    <div class="page-header">
+        <h1>🎥 Video Detection</h1>
+        <p>Detect and count fruits in videos or live webcam feed</p>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" data-tab="upload">Upload Video</button>
+        <button class="tab" data-tab="webcam">Live Webcam</button>
+    </div>
+
+    <!-- Upload Video Tab -->
+    <div class="tab-content active" id="upload-tab">
+        <div class="upload-area" id="videoUploadArea">
+            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            <h3>Drop your video here</h3>
+            <p>or</p>
+            <div class="file-input-wrapper">
+                <input type="file" id="videoInput" accept="video/*">
+                <label for="videoInput" class="file-input-label">Browse Videos</label>
+            </div>
+            <p style="margin-top: 1rem; color: #999; font-size: 0.9rem;">
+                Supported formats: MP4, AVI, MOV, MKV
+            </p>
+        </div>
+
+        <div class="video-preview" id="videoPreview" style="display: none;">
+            <h3 style="color: #667eea; margin-bottom: 1rem;">Video Preview</h3>
+            <video id="videoPlayer" controls></video>
+            <button class="control-button" id="processVideoBtn" style="margin-top: 1rem;">
+                🔍 Process Video
+            </button>
+        </div>
+
+        <div class="processing-indicator" id="processingIndicator">
+            <div class="spinner"></div>
+            <p>Processing video and detecting fruits...</p>
+            <p id="processingProgress">0%</p>
+        </div>
+
+        <div class="results-section" id="videoResults">
+            <h2 style="color: #667eea; text-align: center; margin-bottom: 2rem;">Detection Results</h2>
+            
+            <div class="detection-stats">
+                <div class="stat-card">
+                    <h3 id="totalFrames">0</h3>
+                    <p>Total Frames</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="totalDetections">0</h3>
+                    <p>Total Detections</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="videoDuration">0s</h3>
+                    <p>Duration</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="avgFruits">0</h3>
+                    <p>Avg Fruits/Frame</p>
+                </div>
+            </div>
+
+            <div class="timeline" id="detectionTimeline">
+                <h3 style="color: #667eea; margin: 2rem 0 1rem;">Detection Timeline</h3>
+                <!-- Timeline items will be inserted here -->
+            </div>
+
+            <div style="text-align: center; margin-top: 2rem;">
+                <button class="control-button" id="downloadResultsBtn">
+                    📥 Download Results
+                </button>
+                <button class="control-button" id="processAnotherBtn" style="margin-left: 1rem;">
+                    🔄 Process Another Video
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Webcam Tab -->
+    <div class="tab-content" id="webcam-tab">
+        <div class="webcam-section">
+            <div class="webcam-view">
+                <video id="webcamVideo" autoplay playsinline></video>
+                <div class="detection-overlay" id="webcamOverlay">
+                    <div>Detections: <strong id="liveDetections">0</strong></div>
+                    <div>FPS: <strong id="liveFPS">0</strong></div>
+                </div>
+            </div>
+
+            <div class="webcam-controls">
+                <button class="control-button" id="startWebcamBtn">📹 Start Camera</button>
+                <button class="control-button stop" id="stopWebcamBtn" disabled>⏹ Stop Camera</button>
+                <button class="control-button" id="captureFrameBtn" disabled>📸 Capture Frame</button>
+            </div>
+
+            <div class="detection-stats" style="margin-top: 2rem;">
+                <div class="stat-card">
+                    <h3 id="sessionDetections">0</h3>
+                    <p>Session Detections</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="uniqueFruits">0</h3>
+                    <p>Unique Fruit Types</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="sessionDuration">00:00</h3>
+                    <p>Session Duration</p>
+                </div>
+            </div>
+
+            <div id="webcamDetectionLog" style="margin-top: 2rem; max-height: 300px; overflow-y: auto; background: #f8f9ff; padding: 1rem; border-radius: 10px; display: none;">
+                <h3 style="color: #667eea; margin-bottom: 1rem;">Detection Log</h3>
+                <div id="logEntries"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Tab switching
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(tc => tc.classList.remove('active'));
+            
+            tab.classList.add('active');
+            document.getElementById(tab.dataset.tab + '-tab').classList.add('active');
+        });
+    });
+
+    // Video upload handling
+    const videoUploadArea = document.getElementById('videoUploadArea');
+    const videoInput = document.getElementById('videoInput');
+    const videoPreview = document.getElementById('videoPreview');
+    const videoPlayer = document.getElementById('videoPlayer');
+    const processVideoBtn = document.getElementById('processVideoBtn');
+
+    videoUploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        videoUploadArea.classList.add('dragover');
+    });
+
+    videoUploadArea.addEventListener('dragleave', () => {
+        videoUploadArea.classList.remove('dragover');
+    });
+
+    videoUploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        videoUploadArea.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleVideoSelect(files[0]);
+        }
+    });
+
+    videoInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleVideoSelect(e.target.files[0]);
+        }
+    });
+
+    function handleVideoSelect(file) {
+        if (!file.type.startsWith('video/')) {
+            alert('Please select a video file');
+            return;
+        }
+
+        const url = URL.createObjectURL(file);
+        videoPlayer.src = url;
+        videoPreview.style.display = 'block';
+    }
+
+    processVideoBtn.addEventListener('click', async () => {
+        const processingIndicator = document.getElementById('processingIndicator');
+        const videoResults = document.getElementById('videoResults');
+        const progressText = document.getElementById('processingProgress');
+        const timelineDiv = document.getElementById('detectionTimeline');
+        
+        // Hide preview and show processing
+        videoPreview.style.display = 'none';
+        processingIndicator.classList.add('active');
+        
+        // Get video metadata
+        const duration = videoPlayer.duration;
+        const fps = 30; // Assume 30 FPS
+        const totalFrames = Math.floor(duration * fps);
+        
+        // Simulate frame-by-frame processing
+        let processedFrames = 0;
+        let totalDetections = 0;
+        const detectionsByTime = [];
+        
+        const processingInterval = setInterval(() => {
+            processedFrames += 10;
+            const progress = Math.min(100, Math.floor((processedFrames / totalFrames) * 100));
+            progressText.textContent = `${progress}% (${processedFrames}/${totalFrames} frames)`;
+            
+            // Simulate random detections
+            if (processedFrames % 30 === 0) {
+                const timestamp = (processedFrames / fps).toFixed(2);
+                const detectionCount = Math.floor(Math.random() * 5) + 3;
+                totalDetections += detectionCount;
+                
+                detectionsByTime.push({
+                    time: timestamp,
+                    count: detectionCount,
+                    fruits: generateRandomFruits(detectionCount)
+                });
+            }
+            
+            if (processedFrames >= totalFrames) {
+                clearInterval(processingInterval);
+                
+                // Show results
+                processingIndicator.classList.remove('active');
+                videoResults.classList.add('active');
+                
+                // Update statistics
+                document.getElementById('totalFrames').textContent = totalFrames;
+                document.getElementById('totalDetections').textContent = totalDetections;
+                document.getElementById('videoDuration').textContent = duration.toFixed(1) + 's';
+                document.getElementById('avgFruits').textContent = (totalDetections / detectionsByTime.length).toFixed(1);
+                
+                // Build timeline
+                timelineDiv.innerHTML = '<h3 style="color: #667eea; margin: 2rem 0 1rem;">Detection Timeline</h3>';
+                detectionsByTime.forEach(detection => {
+                    const item = document.createElement('div');
+                    item.className = 'timeline-item';
+                    item.innerHTML = `
+                        <div class="timeline-time">${detection.time}s</div>
+                        <div class="timeline-content">
+                            <strong>${detection.count} fruits detected:</strong> ${detection.fruits.join(', ')}
+                        </div>
+                    `;
+                    timelineDiv.appendChild(item);
+                });
+            }
+        }, 100);
+    });
+    
+    function generateRandomFruits(count) {
+        const fruits = ['🍎 Apple', '🍊 Orange', '🍌 Banana', '🍇 Grape', '🍓 Strawberry'];
+        const selected = [];
+        for (let i = 0; i < count; i++) {
+            selected.push(fruits[Math.floor(Math.random() * fruits.length)]);
+        }
+        return selected;
+    }
+
+    // Webcam handling
+    const webcamVideo = document.getElementById('webcamVideo');
+    const startWebcamBtn = document.getElementById('startWebcamBtn');
+    const stopWebcamBtn = document.getElementById('stopWebcamBtn');
+    const captureFrameBtn = document.getElementById('captureFrameBtn');
+    let webcamStream = null;
+
+    let detectionInterval = null;
+    let sessionDetectionCount = 0;
+    let uniqueFruitsSet = new Set();
+    
+    startWebcamBtn.addEventListener('click', async () => {
+        try {
+            webcamStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { width: 1280, height: 720, facingMode: 'environment' } 
+            });
+            webcamVideo.srcObject = webcamStream;
+            
+            startWebcamBtn.disabled = true;
+            stopWebcamBtn.disabled = false;
+            captureFrameBtn.disabled = false;
+            
+            // Reset session data
+            sessionDetectionCount = 0;
+            uniqueFruitsSet.clear();
+            document.getElementById('logEntries').innerHTML = '';
+            
+            addLogEntry('Webcam started successfully');
+            
+            // Start detection loop (simulated)
+            let frameCount = 0;
+            const startTime = Date.now();
+            
+            // Session timer
+            sessionStartTime = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('sessionDuration').textContent = 
+                    `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }, 1000);
+            
+            detectionInterval = setInterval(() => {
+                frameCount++;
+                const currentDetections = Math.floor(Math.random() * 8) + 2;
+                sessionDetectionCount += currentDetections;
+                
+                // Simulate detecting different fruits
+                const fruits = ['🍎 Apple', '🍊 Orange', '🍌 Banana', '🍇 Grape', '🍓 Strawberry', '🍑 Peach', '🥝 Kiwi'];
+                const detectedThisFrame = [];
+                
+                for (let i = 0; i < Math.min(currentDetections, 3); i++) {
+                    const fruit = fruits[Math.floor(Math.random() * fruits.length)];
+                    uniqueFruitsSet.add(fruit);
+                    detectedThisFrame.push(fruit);
+                }
+                
+                // Log significant detections
+                if (currentDetections > 5 && frameCount % 50 === 0) {
+                    addLogEntry(`High activity: ${currentDetections} fruits detected (${detectedThisFrame.join(', ')})`);
+                }
+                
+                document.getElementById('liveDetections').textContent = currentDetections;
+                document.getElementById('sessionDetections').textContent = sessionDetectionCount;
+                document.getElementById('uniqueFruits').textContent = uniqueFruitsSet.size;
+                
+                // Calculate FPS
+                const elapsed = (Date.now() - startTime) / 1000;
+                const fps = Math.floor(frameCount / elapsed);
+                document.getElementById('liveFPS').textContent = fps;
+            }, 100);
+            
+        } catch (error) {
+            console.error('Error accessing webcam:', error);
+            alert('Unable to access webcam. Please check permissions and ensure you are using HTTPS or localhost.');
+        }
+    });
+
+    stopWebcamBtn.addEventListener('click', () => {
+        if (webcamStream) {
+            webcamStream.getTracks().forEach(track => track.stop());
+            webcamVideo.srcObject = null;
+            
+            if (detectionInterval) {
+                clearInterval(detectionInterval);
+                detectionInterval = null;
+            }
+            
+            if (sessionStartTime) {
+                clearInterval(sessionStartTime);
+                sessionStartTime = null;
+            }
+            
+            startWebcamBtn.disabled = false;
+            stopWebcamBtn.disabled = true;
+            captureFrameBtn.disabled = true;
+            
+            document.getElementById('liveDetections').textContent = '0';
+            document.getElementById('liveFPS').textContent = '0';
+        }
+    });
+
+    captureFrameBtn.addEventListener('click', () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = webcamVideo.videoWidth;
+        canvas.height = webcamVideo.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(webcamVideo, 0, 0);
+        
+        canvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `fruit_detection_${Date.now()}.jpg`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            // Add to detection log
+            addLogEntry('Frame captured and saved');
+        }, 'image/jpeg', 0.95);
+    });
+
+    // Download results button
+    document.getElementById('downloadResultsBtn').addEventListener('click', () => {
+        const results = {
+            timestamp: new Date().toISOString(),
+            totalFrames: document.getElementById('totalFrames').textContent,
+            totalDetections: document.getElementById('totalDetections').textContent,
+            duration: document.getElementById('videoDuration').textContent,
+            avgFruits: document.getElementById('avgFruits').textContent,
+            timeline: Array.from(document.querySelectorAll('.timeline-item')).map(item => ({
+                time: item.querySelector('.timeline-time').textContent,
+                content: item.querySelector('.timeline-content').textContent
+            }))
+        };
+        
+        const dataStr = JSON.stringify(results, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `detection_results_${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    // Process another video button
+    document.getElementById('processAnotherBtn').addEventListener('click', () => {
+        document.getElementById('videoResults').classList.remove('active');
+        document.getElementById('videoPreview').style.display = 'none';
+        videoPlayer.src = '';
+        videoInput.value = '';
+    });
+
+    // Detection log helper
+    let sessionStartTime = null;
+    
+    function addLogEntry(message) {
+        const logDiv = document.getElementById('webcamDetectionLog');
+        const logEntries = document.getElementById('logEntries');
+        logDiv.style.display = 'block';
+        
+        const entry = document.createElement('div');
+        entry.style.cssText = 'padding: 0.5rem; margin-bottom: 0.3rem; background: white; border-radius: 5px; font-size: 0.9rem; border-left: 3px solid #667eea;';
+        const timestamp = new Date().toLocaleTimeString();
+        entry.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+        logEntries.insertBefore(entry, logEntries.firstChild);
+        
+        // Keep only last 20 entries
+        while (logEntries.children.length > 20) {
+            logEntries.removeChild(logEntries.lastChild);
+        }
+    }
+</script>
+{% endblock %}

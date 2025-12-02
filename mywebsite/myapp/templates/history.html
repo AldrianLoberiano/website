@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+
+{% block title %}Smart Fruit - History{% endblock %}
+
+{% block extra_css %}
+<style>
+    .history-container {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .page-header h1 {
+        color: #667eea;
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .filter-section {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .filter-button {
+        padding: 0.75rem 1.5rem;
+        background: #f8f9ff;
+        border: 2px solid #667eea;
+        border-radius: 50px;
+        color: #667eea;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .filter-button:hover,
+    .filter-button.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .history-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 2rem;
+    }
+
+    .history-card {
+        background: #f8f9ff;
+        border-radius: 15px;
+        overflow: hidden;
+        transition: transform 0.3s, box-shadow 0.3s;
+        cursor: pointer;
+    }
+
+    .history-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .history-image {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+    }
+
+    .history-content {
+        padding: 1.5rem;
+    }
+
+    .history-date {
+        color: #999;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .history-stats {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #ddd;
+    }
+
+    .stat {
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #667eea;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+        color: #666;
+        margin-top: 0.25rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #999;
+    }
+
+    .empty-state svg {
+        width: 100px;
+        height: 100px;
+        stroke: #ddd;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state h3 {
+        color: #666;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state a {
+        display: inline-block;
+        margin-top: 1rem;
+        padding: 1rem 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 50px;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="history-container">
+    <div class="page-header">
+        <h1>📋 Detection History</h1>
+        <p>View your past fruit detection results</p>
+    </div>
+
+    <div class="filter-section">
+        <button class="filter-button active" data-filter="all">All</button>
+        <button class="filter-button" data-filter="today">Today</button>
+        <button class="filter-button" data-filter="week">This Week</button>
+        <button class="filter-button" data-filter="month">This Month</button>
+    </div>
+
+    <div class="history-grid" id="historyGrid">
+        <!-- Sample history cards (replace with actual data from backend) -->
+        <div class="history-card">
+            <img src="https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=400" alt="Detection" class="history-image">
+            <div class="history-content">
+                <div class="history-date">📅 November 30, 2025 - 14:35</div>
+                <h3>Mixed Fruits Detection</h3>
+                <div class="history-stats">
+                    <div class="stat">
+                        <div class="stat-value">15</div>
+                        <div class="stat-label">Fruits</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">3</div>
+                        <div class="stat-label">Types</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">94%</div>
+                        <div class="stat-label">Confidence</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="history-card">
+            <img src="https://images.unsplash.com/photo-1587049352846-4a222e784faf?w=400" alt="Detection" class="history-image">
+            <div class="history-content">
+                <div class="history-date">📅 November 29, 2025 - 10:22</div>
+                <h3>Apple Batch Detection</h3>
+                <div class="history-stats">
+                    <div class="stat">
+                        <div class="stat-value">8</div>
+                        <div class="stat-label">Fruits</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">1</div>
+                        <div class="stat-label">Types</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">97%</div>
+                        <div class="stat-label">Confidence</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="history-card">
+            <img src="https://images.unsplash.com/photo-1574856344991-aaa31b6f4ce3?w=400" alt="Detection" class="history-image">
+            <div class="history-content">
+                <div class="history-date">📅 November 28, 2025 - 16:45</div>
+                <h3>Citrus Collection</h3>
+                <div class="history-stats">
+                    <div class="stat">
+                        <div class="stat-value">12</div>
+                        <div class="stat-label">Fruits</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">2</div>
+                        <div class="stat-label">Types</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">92%</div>
+                        <div class="stat-label">Confidence</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty state (show when no history) -->
+    <!-- <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+        <h3>No detection history yet</h3>
+        <p>Start detecting fruits to see your history here</p>
+        <a href="{% url 'detect' %}">Start Detection</a>
+    </div> -->
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const filterButtons = document.querySelectorAll('.filter-button');
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            const filter = button.dataset.filter;
+            // TODO: Implement filtering logic based on date range
+            console.log('Filtering by:', filter);
+        });
+    });
+</script>
+{% endblock %}

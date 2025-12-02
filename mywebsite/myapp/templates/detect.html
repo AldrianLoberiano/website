@@ -1,0 +1,449 @@
+{% extends 'base.html' %}
+
+{% block title %}Smart Fruit - Detect{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detection-container {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .page-header h1 {
+        color: #667eea;
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-header p {
+        color: #666;
+        font-size: 1.1rem;
+    }
+
+    .upload-section {
+        border: 3px dashed #667eea;
+        border-radius: 15px;
+        padding: 3rem;
+        text-align: center;
+        margin-bottom: 2rem;
+        transition: all 0.3s;
+        background: #f8f9ff;
+    }
+
+    .upload-section.dragover {
+        background: #e8ebff;
+        border-color: #764ba2;
+    }
+
+    .upload-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1rem;
+        stroke: #667eea;
+    }
+
+    .file-input-wrapper {
+        position: relative;
+        display: inline-block;
+        margin-top: 1rem;
+    }
+
+    .file-input-wrapper input[type="file"] {
+        position: absolute;
+        left: -9999px;
+    }
+
+    .file-input-label {
+        display: inline-block;
+        padding: 1rem 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 50px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: transform 0.3s;
+    }
+
+    .file-input-label:hover {
+        transform: scale(1.05);
+    }
+
+    .preview-section {
+        display: none;
+        margin-top: 2rem;
+    }
+
+    .preview-section.active {
+        display: block;
+    }
+
+    .image-preview {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .image-preview img {
+        max-width: 100%;
+        max-height: 500px;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .detect-button {
+        display: block;
+        width: 100%;
+        max-width: 300px;
+        margin: 2rem auto;
+        padding: 1rem 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.3s;
+    }
+
+    .detect-button:hover:not(:disabled) {
+        transform: scale(1.05);
+    }
+
+    .detect-button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .loading {
+        display: none;
+        text-align: center;
+        margin: 2rem 0;
+    }
+
+    .loading.active {
+        display: block;
+    }
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .results-section {
+        display: none;
+        margin-top: 2rem;
+    }
+
+    .results-section.active {
+        display: block;
+    }
+
+    .results-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .result-image {
+        text-align: center;
+    }
+
+    .result-image img {
+        max-width: 100%;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .result-stats {
+        background: #f8f9ff;
+        padding: 2rem;
+        border-radius: 15px;
+    }
+
+    .result-stats h3 {
+        color: #667eea;
+        margin-bottom: 1.5rem;
+        font-size: 1.5rem;
+    }
+
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 1rem;
+        background: white;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+    }
+
+    .stat-label {
+        font-weight: bold;
+        color: #333;
+    }
+
+    .stat-value {
+        color: #667eea;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+
+    .fruit-counts {
+        margin-top: 2rem;
+    }
+
+    .fruit-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1rem;
+        background: white;
+        border-radius: 10px;
+        margin-bottom: 0.5rem;
+    }
+
+    .fruit-name {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .fruit-badge {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+        .results-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detection-container">
+    <div class="page-header">
+        <h1>🔍 Fruit Detection</h1>
+        <p>Upload an image to detect and count fruits automatically</p>
+    </div>
+
+    <div class="upload-section" id="uploadSection">
+        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <h3>Drop your image here</h3>
+        <p>or</p>
+        <div class="file-input-wrapper">
+            <input type="file" id="fileInput" accept="image/*">
+            <label for="fileInput" class="file-input-label">Browse Files</label>
+        </div>
+        <p style="margin-top: 1rem; color: #999; font-size: 0.9rem;">
+            Supported formats: JPG, PNG, JPEG
+        </p>
+    </div>
+
+    <div class="preview-section" id="previewSection">
+        <h3 style="color: #667eea; margin-bottom: 1rem;">Preview</h3>
+        <div class="image-preview">
+            <img id="imagePreview" src="" alt="Preview">
+        </div>
+        <button class="detect-button" id="detectButton">
+            🔍 Start Detection
+        </button>
+    </div>
+
+    <div class="loading" id="loadingSection">
+        <div class="spinner"></div>
+        <p>Analyzing image and detecting fruits...</p>
+    </div>
+
+    <div class="results-section" id="resultsSection">
+        <h2 style="color: #667eea; text-align: center; margin-bottom: 2rem;">Detection Results</h2>
+        <div class="results-grid">
+            <div class="result-image">
+                <h3 style="color: #667eea; margin-bottom: 1rem;">Detected Image</h3>
+                <img id="resultImage" src="" alt="Detected fruits">
+            </div>
+            <div class="result-stats">
+                <h3>📊 Statistics</h3>
+                <div class="stat-item">
+                    <span class="stat-label">Total Fruits Detected</span>
+                    <span class="stat-value" id="totalCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Detection Time</span>
+                    <span class="stat-value" id="detectionTime">0s</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Average Confidence</span>
+                    <span class="stat-value" id="avgConfidence">0%</span>
+                </div>
+
+                <div class="fruit-counts">
+                    <h4 style="color: #667eea; margin-bottom: 1rem;">Fruit Breakdown</h4>
+                    <div id="fruitList">
+                        <!-- Fruit items will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="detect-button" onclick="location.reload()">
+            📷 Detect Another Image
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const uploadSection = document.getElementById('uploadSection');
+    const previewSection = document.getElementById('previewSection');
+    const loadingSection = document.getElementById('loadingSection');
+    const resultsSection = document.getElementById('resultsSection');
+    const fileInput = document.getElementById('fileInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const detectButton = document.getElementById('detectButton');
+    
+    let selectedFile = null;
+
+    // Drag and drop handlers
+    uploadSection.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadSection.classList.add('dragover');
+    });
+
+    uploadSection.addEventListener('dragleave', () => {
+        uploadSection.classList.remove('dragover');
+    });
+
+    uploadSection.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadSection.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFileSelect(files[0]);
+        }
+    });
+
+    // File input handler
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFileSelect(e.target.files[0]);
+        }
+    });
+
+    function handleFileSelect(file) {
+        if (!file.type.startsWith('image/')) {
+            alert('Please select an image file');
+            return;
+        }
+
+        selectedFile = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            imagePreview.src = e.target.result;
+            previewSection.classList.add('active');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // Detect button handler
+    detectButton.addEventListener('click', async () => {
+        if (!selectedFile) return;
+
+        // Show loading
+        previewSection.style.display = 'none';
+        loadingSection.classList.add('active');
+
+        // Simulate detection (replace with actual API call)
+        const formData = new FormData();
+        formData.append('image', selectedFile);
+
+        try {
+            // TODO: Replace with actual API endpoint
+            // const response = await fetch('/api/detect/', {
+            //     method: 'POST',
+            //     body: formData
+            // });
+            // const data = await response.json();
+
+            // Simulated response for demo
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            const data = {
+                image_url: imagePreview.src,
+                total_count: 15,
+                detection_time: 1.24,
+                avg_confidence: 94.5,
+                fruits: [
+                    { name: 'Apple', count: 6, emoji: '🍎' },
+                    { name: 'Orange', count: 5, emoji: '🍊' },
+                    { name: 'Banana', count: 4, emoji: '🍌' }
+                ]
+            };
+
+            displayResults(data);
+        } catch (error) {
+            console.error('Detection error:', error);
+            alert('An error occurred during detection. Please try again.');
+            location.reload();
+        }
+    });
+
+    function displayResults(data) {
+        // Hide loading
+        loadingSection.classList.remove('active');
+
+        // Show results
+        document.getElementById('resultImage').src = data.image_url;
+        document.getElementById('totalCount').textContent = data.total_count;
+        document.getElementById('detectionTime').textContent = data.detection_time.toFixed(2) + 's';
+        document.getElementById('avgConfidence').textContent = data.avg_confidence.toFixed(1) + '%';
+
+        // Display fruit breakdown
+        const fruitList = document.getElementById('fruitList');
+        fruitList.innerHTML = '';
+        data.fruits.forEach((fruit, index) => {
+            const fruitItem = document.createElement('div');
+            fruitItem.className = 'fruit-item';
+            fruitItem.innerHTML = `
+                <div class="fruit-name">
+                    <div class="fruit-badge">${index + 1}</div>
+                    <span style="font-size: 1.2rem;">${fruit.emoji}</span>
+                    <span style="font-weight: 500;">${fruit.name}</span>
+                </div>
+                <span style="color: #667eea; font-weight: bold; font-size: 1.1rem;">${fruit.count}</span>
+            `;
+            fruitList.appendChild(fruitItem);
+        });
+
+        resultsSection.classList.add('active');
+    }
+</script>
+{% endblock %}

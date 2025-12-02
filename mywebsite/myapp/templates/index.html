@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}Smart Fruit - Home{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        margin-bottom: 3rem;
+    }
+
+    .hero h1 {
+        font-size: 3rem;
+        color: #667eea;
+        margin-bottom: 1rem;
+    }
+
+    .hero p {
+        font-size: 1.2rem;
+        color: #666;
+        margin-bottom: 2rem;
+    }
+
+    .cta-button {
+        display: inline-block;
+        padding: 1rem 3rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        transition: transform 0.3s, box-shadow 0.3s;
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .cta-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 30px rgba(102, 126, 234, 0.6);
+    }
+
+    .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+        margin-top: 3rem;
+    }
+
+    .feature-card {
+        background: white;
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .feature-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+
+    .feature-icon svg {
+        width: 30px;
+        height: 30px;
+        stroke: white;
+    }
+
+    .feature-card h3 {
+        color: #333;
+        margin-bottom: 0.5rem;
+        font-size: 1.3rem;
+    }
+
+    .feature-card p {
+        color: #666;
+        line-height: 1.6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>🍎 Smart Fruit Detection</h1>
+    <p>Automated fruit detection and counting using advanced computer vision AI</p>
+    <a href="{% url 'detect' %}" class="cta-button">Start Detection</a>
+</div>
+
+<div class="features">
+    <div class="feature-card">
+        <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v6l4 2"/>
+            </svg>
+        </div>
+        <h3>Real-Time Detection</h3>
+        <p>Instantly detect and identify various types of fruits in images with high accuracy using state-of-the-art AI models.</p>
+    </div>
+
+    <div class="feature-card">
+        <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <path d="M9 9h6v6H9z"/>
+            </svg>
+        </div>
+        <h3>Accurate Counting</h3>
+        <p>Automatically count the number of fruits in your images, organized by type with detailed statistics.</p>
+    </div>
+
+    <div class="feature-card">
+        <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+        </div>
+        <h3>Visual Analytics</h3>
+        <p>Get detailed visual feedback with bounding boxes, confidence scores, and comprehensive detection reports.</p>
+    </div>
+</div>
+{% endblock %}
