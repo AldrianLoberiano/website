@@ -382,37 +382,66 @@
         previewSection.style.display = 'none';
         loadingSection.classList.add('active');
 
-        // Simulate detection (replace with actual API call)
         const formData = new FormData();
         formData.append('image', selectedFile);
 
         try {
-            // TODO: Replace with actual API endpoint
-            // const response = await fetch('/api/detect/', {
-            //     method: 'POST',
-            //     body: formData
-            // });
-            // const data = await response.json();
-
-            // Simulated response for demo
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            const startTime = performance.now();
+            
+            // Call actual detection API
+            const response = await fetch('/api/detect-image/', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                throw new Error('Detection failed');
+            }
+            
+            const apiData = await response.json();
+            const endTime = performance.now();
+            const detectionTime = (endTime - startTime) / 1000;
+            
+            if (!apiData.success) {
+                throw new Error(apiData.error || 'Detection failed');
+            }
+            
+            // Transform API response to display format
+            const classEmojis = {
+                'Unripe': '🔴',
+                'Semi-Ripe': '🟠',
+                'Ripe': '🟢',
+                'Overripe': '🟡',
+                'Defective': '🟣'
+            };
+            
+            const fruits = Object.entries(apiData.class_counts).map(([name, count]) => ({
+                name: name,
+                count: count,
+                emoji: classEmojis[name] || '🍎'
+            }));
+            
+            const totalConfidence = apiData.detections.reduce(
+                (sum, det) => sum + det.confidence, 0
+            );
+            const avgConfidence = apiData.detections.length > 0 
+                ? (totalConfidence / apiData.detections.length) * 100 
+                : 0;
+            
             const data = {
-                image_url: imagePreview.src,
-                total_count: 15,
-                detection_time: 1.24,
-                avg_confidence: 94.5,
-                fruits: [
-                    { name: 'Apple', count: 6, emoji: '🍎' },
-                    { name: 'Orange', count: 5, emoji: '🍊' },
-                    { name: 'Banana', count: 4, emoji: '🍌' }
-                ]
+                image_url: apiData.result_image,
+                total_count: apiData.total_count,
+                detection_time: detectionTime,
+                avg_confidence: avgConfidence,
+                fruits: fruits
             };
 
             displayResults(data);
         } catch (error) {
             console.error('Detection error:', error);
-            alert('An error occurred during detection. Please try again.');
-            location.reload();
+            loadingSection.classList.remove('active');
+            alert('Detection failed: ' + error.message + '. Please try again.');
+            previewSection.style.display = 'block';
         }
     });
 
