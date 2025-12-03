@@ -25,4 +25,5 @@ urlpatterns = [
     path('video-detect/', views.video_detect, name='video_detect'),
     path('history/', views.history, name='history'),
     path('api/detect-image/', views.api_detect_image, name='api_detect_image'),
+    path('api/detect-frame/', views.api_detect_frame, name='api_detect_frame'),
 ]

@@ -422,7 +422,8 @@
     <div class="tab-content" id="webcam-tab">
         <div class="webcam-section">
             <div class="webcam-view">
-                <video id="webcamVideo" autoplay playsinline></video>
+                <video id="webcamVideo" autoplay playsinline style="display: none;"></video>
+                <canvas id="webcamCanvas"></canvas>
                 <div class="detection-overlay" id="webcamOverlay">
                     <div>Detections: <strong id="liveDetections">0</strong></div>
                     <div>FPS: <strong id="liveFPS">0</strong></div>
@@ -596,6 +597,8 @@
 
     // Webcam handling
     const webcamVideo = document.getElementById('webcamVideo');
+    const webcamCanvas = document.getElementById('webcamCanvas');
+    const webcamCtx = webcamCanvas.getContext('2d');
     const startWebcamBtn = document.getElementById('startWebcamBtn');
     const stopWebcamBtn = document.getElementById('stopWebcamBtn');
     const captureFrameBtn = document.getElementById('captureFrameBtn');
@@ -604,6 +607,7 @@
     let detectionInterval = null;
     let sessionDetectionCount = 0;
     let uniqueFruitsSet = new Set();
+    let isProcessing = false;
     
     startWebcamBtn.addEventListener('click', async () => {
         try {
@@ -611,6 +615,15 @@
                 video: { width: 1280, height: 720, facingMode: 'environment' } 
             });
             webcamVideo.srcObject = webcamStream;
+            
+            // Wait for video to load
+            await new Promise(resolve => {
+                webcamVideo.onloadedmetadata = () => {
+                    webcamCanvas.width = webcamVideo.videoWidth;
+                    webcamCanvas.height = webcamVideo.videoHeight;
+                    resolve();
+                };
+            });
             
             startWebcamBtn.disabled = true;
             stopWebcamBtn.disabled = false;
@@ -621,11 +634,13 @@
             uniqueFruitsSet.clear();
             document.getElementById('logEntries').innerHTML = '';
             
-            addLogEntry('Webcam started successfully');
+            addLogEntry('Webcam started - Real-time detection active');
             
-            // Start detection loop (simulated)
+            // Start detection loop with REAL API calls
             let frameCount = 0;
+            let detectionCount = 0;
             const startTime = Date.now();
+            let lastProcessTime = 0;
             
             // Session timer
             sessionStartTime = setInterval(() => {
@@ -636,35 +651,88 @@
                     `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
             }, 1000);
             
-            detectionInterval = setInterval(() => {
+            // Real-time detection loop
+            async function processFrame() {
+                if (!webcamStream) return;
+                
                 frameCount++;
-                const currentDetections = Math.floor(Math.random() * 8) + 2;
-                sessionDetectionCount += currentDetections;
                 
-                // Simulate detecting different fruits
-                const fruits = ['🍎 Apple', '🍊 Orange', '🍌 Banana', '🍇 Grape', '🍓 Strawberry', '🍑 Peach', '🥝 Kiwi'];
-                const detectedThisFrame = [];
+                // Draw current frame to canvas
+                webcamCtx.drawImage(webcamVideo, 0, 0, webcamCanvas.width, webcamCanvas.height);
                 
-                for (let i = 0; i < Math.min(currentDetections, 3); i++) {
-                    const fruit = fruits[Math.floor(Math.random() * fruits.length)];
-                    uniqueFruitsSet.add(fruit);
-                    detectedThisFrame.push(fruit);
+                // Process every 3rd frame to maintain performance (adjust as needed)
+                if (!isProcessing && frameCount % 3 === 0) {
+                    isProcessing = true;
+                    const processStart = performance.now();
+                    
+                    try {
+                        // Get frame as base64
+                        const frameData = webcamCanvas.toDataURL('image/jpeg', 0.8);
+                        
+                        // Call detection API
+                        const response = await fetch('/api/detect-frame/', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ frame: frameData })
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            
+                            if (data.success && data.result_frame) {
+                                // Display frame with bounding boxes
+                                const img = new Image();
+                                img.onload = () => {
+                                    webcamCtx.drawImage(img, 0, 0, webcamCanvas.width, webcamCanvas.height);
+                                };
+                                img.src = data.result_frame;
+                                
+                                // Update detection counts
+                                detectionCount += data.total_count;
+                                sessionDetectionCount = detectionCount;
+                                
+                                // Track unique classes
+                                Object.keys(data.class_counts).forEach(className => {
+                                    uniqueFruitsSet.add(className);
+                                });
+                                
+                                document.getElementById('liveDetections').textContent = data.total_count;
+                                document.getElementById('sessionDetections').textContent = sessionDetectionCount;
+                                document.getElementById('uniqueFruits').textContent = uniqueFruitsSet.size;
+                                
+                                // Log high detection activity
+                                if (data.total_count > 3) {
+                                    const classList = Object.entries(data.class_counts)
+                                        .map(([cls, count]) => `${count}x ${cls}`)
+                                        .join(', ');
+                                    addLogEntry(`Detected: ${classList}`);
+                                }
+                            }
+                        }
+                        
+                        const processEnd = performance.now();
+                        lastProcessTime = processEnd - processStart;
+                        
+                    } catch (error) {
+                        console.error('Detection error:', error);
+                    } finally {
+                        isProcessing = false;
+                    }
                 }
-                
-                // Log significant detections
-                if (currentDetections > 5 && frameCount % 50 === 0) {
-                    addLogEntry(`High activity: ${currentDetections} fruits detected (${detectedThisFrame.join(', ')})`);
-                }
-                
-                document.getElementById('liveDetections').textContent = currentDetections;
-                document.getElementById('sessionDetections').textContent = sessionDetectionCount;
-                document.getElementById('uniqueFruits').textContent = uniqueFruitsSet.size;
                 
                 // Calculate FPS
                 const elapsed = (Date.now() - startTime) / 1000;
                 const fps = Math.floor(frameCount / elapsed);
                 document.getElementById('liveFPS').textContent = fps;
-            }, 100);
+                
+                // Continue loop
+                if (webcamStream) {
+                    requestAnimationFrame(processFrame);
+                }
+            }
+            
+            // Start processing
+            processFrame();
             
         } catch (error) {
             console.error('Error accessing webcam:', error);
@@ -697,13 +765,8 @@
     });
 
     captureFrameBtn.addEventListener('click', () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = webcamVideo.videoWidth;
-        canvas.height = webcamVideo.videoHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(webcamVideo, 0, 0);
-        
-        canvas.toBlob((blob) => {
+        // Capture the current canvas (with bounding boxes)
+        webcamCanvas.toBlob((blob) => {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -712,7 +775,7 @@
             URL.revokeObjectURL(url);
             
             // Add to detection log
-            addLogEntry('Frame captured and saved');
+            addLogEntry('Frame captured with detections and saved');
         }, 'image/jpeg', 0.95);
     });
 

@@ -16,7 +16,7 @@ class FruitDetector:
     """TensorFlow Lite-based fruit ripeness detector for Django"""
     
     def __init__(self, model_path="eggplant.tflite"):
-        self.class_names = ["Unripe", "Semi-Ripe", "Ripe", "Overripe", "Defective"]
+        self.class_names = ["Unripe", "Semi-Ripe", "Ripe", "Overripe", "Defective", "No Object Detected"]
         self.confidence_threshold = 0.5
         self.iou_threshold = 0.5
         self.model_loaded = False
@@ -125,54 +125,97 @@ class FruitDetector:
         detections = []
         objects = []
         
-        # Create 2-4 random detections
-        num_detections = np.random.randint(2, 5)
+        # Randomly decide if no objects detected (10% chance)
+        if np.random.random() < 0.1:
+            print("Mock detection: No objects detected")
+            return detections, objects
+        
+        # Create 3-5 random detections with guaranteed visibility
+        num_detections = np.random.randint(3, 6)
+        
+        # Ensure boxes fit within image bounds
+        min_box_size = 80
+        max_box_size = min(200, width // 3, height // 3)
+        
         for i in range(num_detections):
-            x1 = np.random.randint(0, width - 100)
-            y1 = np.random.randint(0, height - 100)
-            x2 = x1 + np.random.randint(50, 150)
-            y2 = y1 + np.random.randint(50, 150)
+            # Generate box size
+            box_width = np.random.randint(min_box_size, max_box_size)
+            box_height = np.random.randint(min_box_size, max_box_size)
             
-            class_label = np.random.choice(self.class_names)
-            confidence = np.random.uniform(0.6, 0.95)
+            # Generate position ensuring box fits in image
+            x1 = np.random.randint(10, max(11, width - box_width - 10))
+            y1 = np.random.randint(10, max(11, height - box_height - 10))
+            x2 = min(x1 + box_width, width - 10)
+            y2 = min(y1 + box_height, height - 10)
+            
+            # Ensure valid box
+            if x2 <= x1 or y2 <= y1:
+                continue
+            
+            # Only use actual fruit classes for detection, not "No Object Detected"
+            fruit_classes = ["Unripe", "Semi-Ripe", "Ripe", "Overripe", "Defective"]
+            class_label = np.random.choice(fruit_classes)
+            confidence = np.random.uniform(0.65, 0.95)
             
             detections.append({
-                'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2,
+                'x1': int(x1), 'y1': int(y1), 'x2': int(x2), 'y2': int(y2),
                 'class': class_label,
                 'confidence': float(confidence)
             })
             objects.append((class_label, confidence))
         
+        print(f"Mock detection generated {len(detections)} boxes for image size {width}x{height}")
         return detections, objects
     
     def draw_detections(self, image, detections):
         """Draw bounding boxes and labels on image"""
         result_image = image.copy()
         
+        if len(detections) == 0:
+            print("No detections to draw")
+            return result_image
+        
         color_map = {
-            'Unripe': (0, 0, 255),      # Red
+            'Unripe': (0, 0, 255),      # Red (BGR format)
             'Semi-Ripe': (0, 165, 255),  # Orange
             'Ripe': (0, 255, 0),         # Green
             'Overripe': (0, 255, 255),   # Yellow
             'Defective': (128, 0, 128)   # Purple
         }
         
-        for det in detections:
-            x1, y1, x2, y2 = det['x1'], det['y1'], det['x2'], det['y2']
+        print(f"Drawing {len(detections)} bounding boxes")
+        
+        for idx, det in enumerate(detections):
+            x1, y1, x2, y2 = int(det['x1']), int(det['y1']), int(det['x2']), int(det['y2'])
             class_label = det['class']
             confidence = det['confidence']
             
             color = color_map.get(class_label, (0, 255, 0))
             
-            cv2.rectangle(result_image, (x1, y1), (x2, y2), color, 2)
+            # Draw bounding box with thicker line
+            cv2.rectangle(result_image, (x1, y1), (x2, y2), color, 3)
             
+            # Prepare label
             label = f"{class_label}: {confidence:.2f}"
-            label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            font_scale = 0.6
+            thickness = 2
             
-            cv2.rectangle(result_image, (x1, y1 - label_size[1] - 10),
-                         (x1 + label_size[0], y1), color, -1)
-            cv2.putText(result_image, label, (x1, y1 - 5),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+            # Get label size
+            (label_width, label_height), baseline = cv2.getTextSize(label, font, font_scale, thickness)
+            
+            # Draw label background
+            label_y = max(y1 - 10, label_height + 10)
+            cv2.rectangle(result_image, 
+                         (x1, label_y - label_height - 5),
+                         (x1 + label_width + 5, label_y + baseline - 5), 
+                         color, -1)
+            
+            # Draw label text
+            cv2.putText(result_image, label, (x1 + 2, label_y - 5),
+                       font, font_scale, (255, 255, 255), thickness)
+            
+            print(f"Box {idx+1}: {class_label} at ({x1},{y1}) to ({x2},{y2})")
         
         return result_image
     
