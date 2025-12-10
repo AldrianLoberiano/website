@@ -1,250 +1,776 @@
 {% extends 'base.html' %}
 
-{% block title %}Smart Fruit - History{% endblock %}
+{% block title %}Smart Fruit - Analytics Dashboard{% endblock %}
 
 {% block extra_css %}
 <style>
-    .history-container {
-        background: white;
-        border-radius: 20px;
-        padding: 2rem;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
     }
 
-    .page-header {
-        text-align: center;
-        margin-bottom: 2rem;
+    body {
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0f0f0f 100%);
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #e5e5e5;
+        padding: 0;
+        overflow-x: hidden;
     }
 
-    .page-header h1 {
-        color: #667eea;
-        font-size: 2.5rem;
-        margin-bottom: 0.5rem;
+    .dashboard-container {
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 20px 16px;
     }
 
-    .filter-section {
+    /* Header Section */
+    .dashboard-header {
+        margin-bottom: 24px;
+        animation: slideDown 0.6s ease-out;
+    }
+
+    .dashboard-title {
+        font-size: 28px;
+        font-weight: 700;
+        background: linear-gradient(135deg, #00ff9d 0%, #00e5ff 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 8px;
+        filter: drop-shadow(0 0 20px rgba(0, 255, 157, 0.4));
+    }
+
+    .dashboard-subtitle {
+        color: #9ca3af;
+        font-size: 14px;
         display: flex;
-        gap: 1rem;
-        margin-bottom: 2rem;
-        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
     }
 
-    .filter-button {
-        padding: 0.75rem 1.5rem;
-        background: #f8f9ff;
-        border: 2px solid #667eea;
-        border-radius: 50px;
-        color: #667eea;
-        font-weight: bold;
-        cursor: pointer;
-        transition: all 0.3s;
+    .status-indicator {
+        width: 8px;
+        height: 8px;
+        background: #00ff9d;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+        box-shadow: 0 0 10px rgba(0, 255, 157, 0.6);
     }
 
-    .filter-button:hover,
-    .filter-button.active {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+    /* Performance Chart Card */
+    .chart-card {
+        background: rgba(26, 26, 26, 0.6);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(0, 255, 157, 0.15);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        animation: fadeInUp 0.6s ease-out 0.1s both;
     }
 
-    .history-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 2rem;
-    }
-
-    .history-card {
-        background: #f8f9ff;
-        border-radius: 15px;
-        overflow: hidden;
-        transition: transform 0.3s, box-shadow 0.3s;
-        cursor: pointer;
-    }
-
-    .history-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-    }
-
-    .history-image {
-        width: 100%;
-        height: 200px;
-        object-fit: cover;
-    }
-
-    .history-content {
-        padding: 1.5rem;
-    }
-
-    .history-date {
-        color: #999;
-        font-size: 0.9rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .history-stats {
+    .chart-header {
         display: flex;
         justify-content: space-between;
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid #ddd;
+        align-items: center;
+        margin-bottom: 16px;
     }
 
-    .stat {
+    .chart-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #f3f4f6;
+    }
+
+    .chart-period {
+        font-size: 12px;
+        color: #9ca3af;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 4px 12px;
+        border-radius: 12px;
+    }
+
+    .chart-wrapper {
+        position: relative;
+        height: 180px;
+        margin-bottom: 12px;
+    }
+
+    .chart-canvas {
+        width: 100%;
+        height: 100%;
+    }
+
+    .chart-stats {
+        display: flex;
+        justify-content: space-around;
+        padding-top: 12px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .chart-stat {
         text-align: center;
     }
 
-    .stat-value {
-        font-size: 1.5rem;
-        font-weight: bold;
-        color: #667eea;
+    .chart-stat-value {
+        font-size: 20px;
+        font-weight: 700;
+        color: #00ff9d;
+        text-shadow: 0 0 15px rgba(0, 255, 157, 0.5);
     }
 
-    .stat-label {
-        font-size: 0.8rem;
-        color: #666;
-        margin-top: 0.25rem;
+    .chart-stat-label {
+        font-size: 11px;
+        color: #9ca3af;
+        margin-top: 4px;
     }
 
-    .empty-state {
+    /* Circular Progress Card */
+    .progress-card {
+        background: rgba(26, 26, 26, 0.6);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 24px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(0, 255, 157, 0.15);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        animation: fadeInUp 0.6s ease-out 0.2s both;
         text-align: center;
-        padding: 4rem 2rem;
-        color: #999;
     }
 
-    .empty-state svg {
-        width: 100px;
-        height: 100px;
-        stroke: #ddd;
-        margin-bottom: 1rem;
+    .progress-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #f3f4f6;
+        margin-bottom: 20px;
     }
 
-    .empty-state h3 {
-        color: #666;
-        margin-bottom: 1rem;
+    .circular-progress {
+        position: relative;
+        width: 160px;
+        height: 160px;
+        margin: 0 auto 20px;
     }
 
-    .empty-state a {
-        display: inline-block;
-        margin-top: 1rem;
-        padding: 1rem 2rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        text-decoration: none;
-        border-radius: 50px;
-        font-weight: bold;
+    .circular-progress svg {
+        transform: rotate(-90deg);
+    }
+
+    .progress-bg {
+        fill: none;
+        stroke: rgba(255, 255, 255, 0.05);
+        stroke-width: 12;
+    }
+
+    .progress-bar {
+        fill: none;
+        stroke: url(#progressGradient);
+        stroke-width: 12;
+        stroke-linecap: round;
+        stroke-dasharray: 440;
+        stroke-dashoffset: 440;
+        animation: progressAnimation 2s ease-out forwards;
+    }
+
+    .progress-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+
+    .progress-percentage {
+        font-size: 36px;
+        font-weight: 700;
+        background: linear-gradient(135deg, #00ff9d 0%, #00e5ff 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        filter: drop-shadow(0 0 15px rgba(0, 255, 157, 0.4));
+    }
+
+    .progress-label {
+        font-size: 12px;
+        color: #9ca3af;
+        margin-top: 4px;
+    }
+
+    .progress-details {
+        display: flex;
+        justify-content: space-around;
+        gap: 12px;
+    }
+
+    .progress-detail {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.03);
+        padding: 12px;
+        border-radius: 12px;
+    }
+
+    .progress-detail-value {
+        font-size: 18px;
+        font-weight: 600;
+        color: #00ff9d;
+        text-shadow: 0 0 10px rgba(0, 255, 157, 0.4);
+    }
+
+    .progress-detail-label {
+        font-size: 11px;
+        color: #9ca3af;
+        margin-top: 4px;
+    }
+
+    /* KPI Grid */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+        animation: fadeInUp 0.6s ease-out 0.3s both;
+    }
+
+    .kpi-card {
+        background: rgba(26, 26, 26, 0.6);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 16px;
+        border: 1px solid rgba(0, 255, 157, 0.1);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 0 25px rgba(0, 255, 157, 0.3), 0 8px 24px rgba(0, 0, 0, 0.5);
+        border-color: rgba(0, 255, 157, 0.3);
+    }
+
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--accent-color);
+    }
+
+    .kpi-card.blue { --accent-color: #00ff9d; }
+    .kpi-card.green { --accent-color: #00ff9d; }
+    .kpi-card.red { --accent-color: #cc4444; }
+    .kpi-card.purple { --accent-color: #00ff9d; }
+    .kpi-card.yellow { --accent-color: #00ff9d; }
+    .kpi-card.cyan { --accent-color: #00e5ff; }
+
+    .kpi-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+    }
+
+    .kpi-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        background: var(--accent-color);
+        box-shadow: 0 0 20px rgba(0, 255, 157, 0.4), 0 4px 12px rgba(0, 0, 0, 0.5);
+        color: #0a0a0a;
+    }
+
+    .kpi-trend {
+        font-size: 12px;
+        padding: 4px 8px;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+
+    .kpi-trend.up {
+        color: #00ff9d;
+        background: rgba(0, 255, 157, 0.15);
+        box-shadow: 0 0 10px rgba(0, 255, 157, 0.2);
+    }
+
+    .kpi-trend.down {
+        color: #cc4444;
+        background: rgba(204, 68, 68, 0.15);
+    }
+
+    .kpi-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #00ff9d;
+        margin-bottom: 4px;
+        line-height: 1;
+        text-shadow: 0 0 15px rgba(0, 255, 157, 0.5);
+    }
+
+    .kpi-label {
+        font-size: 12px;
+        color: #9ca3af;
+        font-weight: 500;
+    }
+
+    /* Class Distribution Card */
+    .distribution-card {
+        background: rgba(26, 26, 26, 0.6);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 20px;
+        border: 1px solid rgba(0, 255, 157, 0.15);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        animation: fadeInUp 0.6s ease-out 0.4s both;
+    }
+
+    .distribution-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #f3f4f6;
+        margin-bottom: 16px;
+    }
+
+    .distribution-item {
+        margin-bottom: 16px;
+    }
+
+    .distribution-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .distribution-name {
+        font-size: 13px;
+        color: #d1d5db;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .distribution-emoji {
+        font-size: 16px;
+    }
+
+    .distribution-percentage {
+        font-size: 14px;
+        font-weight: 600;
+        color: #f3f4f6;
+    }
+
+    .distribution-bar-bg {
+        height: 6px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .distribution-bar {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 1s ease-out;
+        animation: barGrow 1.5s ease-out;
+    }
+
+    /* Animations */
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+            box-shadow: 0 0 0 0 rgba(0, 255, 157, 0.7);
+        }
+        50% {
+            opacity: 0.8;
+            box-shadow: 0 0 0 6px rgba(0, 255, 157, 0);
+        }
+    }
+
+    @keyframes progressAnimation {
+        to {
+            stroke-dashoffset: var(--progress-offset);
+        }
+    }
+
+    @keyframes barGrow {
+        from {
+            width: 0;
+        }
+    }
+
+    /* Responsive */
+    @media (max-width: 400px) {
+        .dashboard-container {
+            padding: 16px 12px;
+        }
+
+        .kpi-grid {
+            gap: 10px;
+        }
+
+        .kpi-card {
+            padding: 14px;
+        }
+
+        .kpi-value {
+            font-size: 24px;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="history-container">
-    <div class="page-header">
-        <h1>📋 Detection History</h1>
-        <p>View your past fruit detection results</p>
+<div class="dashboard-container">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">Analytics Dashboard</h1>
+        <div class="dashboard-subtitle">
+            <span class="status-indicator"></span>
+            <span>Live Monitoring</span>
+        </div>
     </div>
 
-    <div class="filter-section">
-        <button class="filter-button active" data-filter="all">All</button>
-        <button class="filter-button" data-filter="today">Today</button>
-        <button class="filter-button" data-filter="week">This Week</button>
-        <button class="filter-button" data-filter="month">This Month</button>
-    </div>
-
-    <div class="history-grid" id="historyGrid">
-        <!-- Sample history cards (replace with actual data from backend) -->
-        <div class="history-card">
-            <img src="https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=400" alt="Detection" class="history-image">
-            <div class="history-content">
-                <div class="history-date">📅 November 30, 2025 - 14:35</div>
-                <h3>Mixed Fruits Detection</h3>
-                <div class="history-stats">
-                    <div class="stat">
-                        <div class="stat-value">15</div>
-                        <div class="stat-label">Fruits</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value">3</div>
-                        <div class="stat-label">Types</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value">94%</div>
-                        <div class="stat-label">Confidence</div>
-                    </div>
-                </div>
-            </div>
+    <!-- Performance Chart -->
+    <div class="chart-card">
+        <div class="chart-header">
+            <h2 class="chart-title">Detection Performance</h2>
+            <span class="chart-period">Last 24h</span>
         </div>
-
-        <div class="history-card">
-            <img src="https://images.unsplash.com/photo-1587049352846-4a222e784faf?w=400" alt="Detection" class="history-image">
-            <div class="history-content">
-                <div class="history-date">📅 November 29, 2025 - 10:22</div>
-                <h3>Apple Batch Detection</h3>
-                <div class="history-stats">
-                    <div class="stat">
-                        <div class="stat-value">8</div>
-                        <div class="stat-label">Fruits</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value">1</div>
-                        <div class="stat-label">Types</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value">97%</div>
-                        <div class="stat-label">Confidence</div>
-                    </div>
-                </div>
-            </div>
+        <div class="chart-wrapper">
+            <canvas id="performanceChart" class="chart-canvas"></canvas>
         </div>
-
-        <div class="history-card">
-            <img src="https://images.unsplash.com/photo-1574856344991-aaa31b6f4ce3?w=400" alt="Detection" class="history-image">
-            <div class="history-content">
-                <div class="history-date">📅 November 28, 2025 - 16:45</div>
-                <h3>Citrus Collection</h3>
-                <div class="history-stats">
-                    <div class="stat">
-                        <div class="stat-value">12</div>
-                        <div class="stat-label">Fruits</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value">2</div>
-                        <div class="stat-label">Types</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value">92%</div>
-                        <div class="stat-label">Confidence</div>
-                    </div>
-                </div>
+        <div class="chart-stats">
+            <div class="chart-stat">
+                <div class="chart-stat-value" id="avgDetections">--</div>
+                <div class="chart-stat-label">Avg/Hour</div>
+            </div>
+            <div class="chart-stat">
+                <div class="chart-stat-value" id="peakDetections">--</div>
+                <div class="chart-stat-label">Peak</div>
+            </div>
+            <div class="chart-stat">
+                <div class="chart-stat-value" id="totalDetections">--</div>
+                <div class="chart-stat-label">Total</div>
             </div>
         </div>
     </div>
 
-    <!-- Empty state (show when no history) -->
-    <!-- <div class="empty-state">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 11l3 3L22 4"/>
-            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-        </svg>
-        <h3>No detection history yet</h3>
-        <p>Start detecting fruits to see your history here</p>
-        <a href="{% url 'detect' %}">Start Detection</a>
-    </div> -->
+    <!-- Circular Progress -->
+    <div class="progress-card">
+        <h2 class="progress-title">System Efficiency</h2>
+        <div class="circular-progress">
+            <svg width="160" height="160">
+                <defs>
+                    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#00ff9d;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#00cc7a;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <circle class="progress-bg" cx="80" cy="80" r="70"></circle>
+                <circle class="progress-bar" cx="80" cy="80" r="70" id="progressCircle"></circle>
+            </svg>
+            <div class="progress-text">
+                <div class="progress-percentage" id="efficiencyPercentage">0%</div>
+                <div class="progress-label">Efficiency</div>
+            </div>
+        </div>
+        <div class="progress-details">
+            <div class="progress-detail">
+                <div class="progress-detail-value" id="successRate">0%</div>
+                <div class="progress-detail-label">Success Rate</div>
+            </div>
+            <div class="progress-detail">
+                <div class="progress-detail-value" id="avgConfidence">0%</div>
+                <div class="progress-detail-label">Avg Confidence</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+        <div class="kpi-card blue">
+            <div class="kpi-header">
+                <div class="kpi-icon">📊</div>
+                <div class="kpi-trend up">↑ 12%</div>
+            </div>
+            <div class="kpi-value" id="totalScans">0</div>
+            <div class="kpi-label">Total Scans</div>
+        </div>
+
+        <div class="kpi-card green">
+            <div class="kpi-header">
+                <div class="kpi-icon">✅</div>
+                <div class="kpi-trend up">↑ 8%</div>
+            </div>
+            <div class="kpi-value" id="ripeFruits">0</div>
+            <div class="kpi-label">Ripe Fruits</div>
+        </div>
+
+        <div class="kpi-card red">
+            <div class="kpi-header">
+                <div class="kpi-icon">⚠️</div>
+                <div class="kpi-trend down">↓ 3%</div>
+            </div>
+            <div class="kpi-value" id="defectiveFruits">0</div>
+            <div class="kpi-label">Defective</div>
+        </div>
+
+        <div class="kpi-card purple">
+            <div class="kpi-header">
+                <div class="kpi-icon">⚡</div>
+                <div class="kpi-trend up">↑ 15%</div>
+            </div>
+            <div class="kpi-value" id="avgProcessTime">0ms</div>
+            <div class="kpi-label">Avg Process Time</div>
+        </div>
+
+        <div class="kpi-card yellow">
+            <div class="kpi-header">
+                <div class="kpi-icon">🎯</div>
+                <div class="kpi-trend up">↑ 5%</div>
+            </div>
+            <div class="kpi-value" id="accuracy">0%</div>
+            <div class="kpi-label">Accuracy</div>
+        </div>
+
+        <div class="kpi-card cyan">
+            <div class="kpi-header">
+                <div class="kpi-icon">🔄</div>
+                <div class="kpi-trend up">↑ 20%</div>
+            </div>
+            <div class="kpi-value" id="activeUsers">0</div>
+            <div class="kpi-label">Active Sessions</div>
+        </div>
+    </div>
+
+    <!-- Class Distribution -->
+    <div class="distribution-card">
+        <h2 class="distribution-title">Ripeness Distribution</h2>
+        
+        <div class="distribution-item">
+            <div class="distribution-header">
+                <span class="distribution-name">
+                    <span class="distribution-emoji">🔴</span>
+                    Unripe
+                </span>
+                <span class="distribution-percentage" id="unripePercent">0%</span>
+            </div>
+            <div class="distribution-bar-bg">
+                <div class="distribution-bar" style="background: linear-gradient(90deg, #cc4444, #aa3333); width: 0%;" id="unripeBar"></div>
+            </div>
+        </div>
+
+        <div class="distribution-item">
+            <div class="distribution-header">
+                <span class="distribution-name">
+                    <span class="distribution-emoji">🟠</span>
+                    Semi-Ripe
+                </span>
+                <span class="distribution-percentage" id="semiRipePercent">0%</span>
+            </div>
+            <div class="distribution-bar-bg">
+                <div class="distribution-bar" style="background: linear-gradient(90deg, #f97316, #ea580c); width: 0%;" id="semiRipeBar"></div>
+            </div>
+        </div>
+
+        <div class="distribution-item">
+            <div class="distribution-header">
+                <span class="distribution-name">
+                    <span class="distribution-emoji">🟢</span>
+                    Ripe
+                </span>
+                <span class="distribution-percentage" id="ripePercent">0%</span>
+            </div>
+            <div class="distribution-bar-bg">
+                <div class="distribution-bar" style="background: linear-gradient(90deg, #10b981, #059669); width: 0%;" id="ripeBar"></div>
+            </div>
+        </div>
+
+        <div class="distribution-item">
+            <div class="distribution-header">
+                <span class="distribution-name">
+                    <span class="distribution-emoji">🟡</span>
+                    Overripe
+                </span>
+                <span class="distribution-percentage" id="overripePercent">0%</span>
+            </div>
+            <div class="distribution-bar-bg">
+                <div class="distribution-bar" style="background: linear-gradient(90deg, #fbbf24, #f59e0b); width: 0%;" id="overripeBar"></div>
+            </div>
+        </div>
+
+        <div class="distribution-item" style="margin-bottom: 0;">
+            <div class="distribution-header">
+                <span class="distribution-name">
+                    <span class="distribution-emoji">🟣</span>
+                    Defective
+                </span>
+                <span class="distribution-percentage" id="defectivePercent">0%</span>
+            </div>
+            <div class="distribution-bar-bg">
+                <div class="distribution-bar" style="background: linear-gradient(90deg, #8b5cf6, #7c3aed); width: 0%;" id="defectiveBar"></div>
+            </div>
+        </div>
+    </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
 <script>
-    const filterButtons = document.querySelectorAll('.filter-button');
-    
-    filterButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            filterButtons.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            
-            const filter = button.dataset.filter;
-            // TODO: Implement filtering logic based on date range
-            console.log('Filtering by:', filter);
+    // Generate mock analytics data
+    function generateMockData() {
+        const hours = [];
+        const detections = [];
+        const now = new Date();
+        
+        for (let i = 23; i >= 0; i--) {
+            const hour = new Date(now - i * 60 * 60 * 1000);
+            hours.push(hour.getHours() + ':00');
+            detections.push(Math.floor(Math.random() * 50) + 20);
+        }
+
+        const distribution = {
+            'Unripe': Math.floor(Math.random() * 20) + 10,
+            'Semi-Ripe': Math.floor(Math.random() * 25) + 15,
+            'Ripe': Math.floor(Math.random() * 30) + 20,
+            'Overripe': Math.floor(Math.random() * 15) + 5,
+            'Defective': Math.floor(Math.random() * 10) + 2
+        };
+
+        const total = Object.values(distribution).reduce((a, b) => a + b, 0);
+
+        return {
+            hours, detections, distribution, total,
+            avgDetections: Math.floor(detections.reduce((a, b) => a + b) / 24),
+            peakDetections: Math.max(...detections),
+            efficiency: Math.floor(Math.random() * 15) + 85,
+            successRate: Math.floor(Math.random() * 10) + 90,
+            avgConfidence: Math.floor(Math.random() * 15) + 80,
+            ripeFruits: distribution['Ripe'],
+            defectiveFruits: distribution['Defective'],
+            avgProcessTime: Math.floor(Math.random() * 100) + 150,
+            accuracy: Math.floor(Math.random() * 8) + 92,
+            activeUsers: Math.floor(Math.random() * 10) + 5
+        };
+    }
+
+    // Initialize chart
+    function initChart(labels, data) {
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 180);
+        gradient.addColorStop(0, 'rgba(0, 255, 157, 0.4)');
+        gradient.addColorStop(1, 'rgba(0, 255, 157, 0.05)');
+
+        const width = ctx.canvas.width;
+        const height = ctx.canvas.height;
+        const padding = 20;
+        const chartWidth = width - padding * 2;
+        const chartHeight = height - padding * 2;
+
+        const maxValue = Math.max(...data) * 1.2;
+        const points = data.map((value, index) => ({
+            x: padding + (chartWidth / (data.length - 1)) * index,
+            y: height - padding - (value / maxValue) * chartHeight
+        }));
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, height - padding);
+        points.forEach(point => ctx.lineTo(point.x, point.y));
+        ctx.lineTo(points[points.length - 1].x, height - padding);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = '#00ff9d';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.shadowColor = 'rgba(0, 255, 157, 0.5)';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        points.forEach(point => ctx.lineTo(point.x, point.y));
+        ctx.stroke();
+
+        ctx.shadowBlur = 0;
+        points.forEach(point => {
+            ctx.fillStyle = '#00ff9d';
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(10, 10, 10, 0.8)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
         });
+    }
+
+    // Update dashboard
+    function updateDashboard() {
+        const data = generateMockData();
+
+        initChart(data.hours, data.detections);
+
+        document.getElementById('avgDetections').textContent = data.avgDetections;
+        document.getElementById('peakDetections').textContent = data.peakDetections;
+        document.getElementById('totalDetections').textContent = data.detections.reduce((a, b) => a + b);
+
+        const progressCircle = document.getElementById('progressCircle');
+        const progressOffset = 440 - (440 * data.efficiency) / 100;
+        progressCircle.style.setProperty('--progress-offset', progressOffset);
+        document.getElementById('efficiencyPercentage').textContent = data.efficiency + '%';
+        document.getElementById('successRate').textContent = data.successRate + '%';
+        document.getElementById('avgConfidence').textContent = data.avgConfidence + '%';
+
+        document.getElementById('totalScans').textContent = data.total;
+        document.getElementById('ripeFruits').textContent = data.ripeFruits;
+        document.getElementById('defectiveFruits').textContent = data.defectiveFruits;
+        document.getElementById('avgProcessTime').textContent = data.avgProcessTime + 'ms';
+        document.getElementById('accuracy').textContent = data.accuracy + '%';
+        document.getElementById('activeUsers').textContent = data.activeUsers;
+
+        const classes = ['unripe', 'semiRipe', 'ripe', 'overripe', 'defective'];
+        const keys = ['Unripe', 'Semi-Ripe', 'Ripe', 'Overripe', 'Defective'];
+        
+        classes.forEach((className, index) => {
+            const percentage = Math.round((data.distribution[keys[index]] / data.total) * 100);
+            document.getElementById(className + 'Percent').textContent = percentage + '%';
+            setTimeout(() => {
+                document.getElementById(className + 'Bar').style.width = percentage + '%';
+            }, 100 * (index + 1));
+        });
+    }
+
+    window.addEventListener('load', () => {
+        updateDashboard();
+        setInterval(updateDashboard, 5000);
     });
 </script>
 {% endblock %}

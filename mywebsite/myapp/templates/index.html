@@ -7,40 +7,47 @@
     .hero {
         text-align: center;
         padding: 4rem 2rem;
-        background: white;
+        background: rgba(26, 26, 26, 0.6);
+        backdrop-filter: blur(10px);
         border-radius: 20px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 10px 40px rgba(0, 255, 157, 0.2);
+        border: 1px solid rgba(0, 255, 157, 0.1);
         margin-bottom: 3rem;
     }
 
     .hero h1 {
         font-size: 3rem;
-        color: #667eea;
+        background: linear-gradient(135deg, #00ff9d 0%, #00e5ff 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
         margin-bottom: 1rem;
+        text-shadow: 0 0 30px rgba(0, 255, 157, 0.3);
     }
 
     .hero p {
         font-size: 1.2rem;
-        color: #666;
+        color: #a0a0a0;
         margin-bottom: 2rem;
     }
 
     .cta-button {
         display: inline-block;
         padding: 1rem 3rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        background: linear-gradient(135deg, #00ff9d 0%, #00cc7a 100%);
+        color: #0a0a0a;
         text-decoration: none;
         border-radius: 50px;
         font-size: 1.1rem;
         font-weight: bold;
         transition: transform 0.3s, box-shadow 0.3s;
-        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 5px 20px rgba(0, 255, 157, 0.4), 0 0 40px rgba(0, 255, 157, 0.2);
     }
 
     .cta-button:hover {
         transform: translateY(-3px);
-        box-shadow: 0 8px 30px rgba(102, 126, 234, 0.6);
+        box-shadow: 0 8px 30px rgba(0, 255, 157, 0.6), 0 0 60px rgba(0, 255, 157, 0.3);
+        background: linear-gradient(135deg, #00e5ff 0%, #00ff9d 100%);
     }
 
     .features {
@@ -51,42 +58,48 @@
     }
 
     .feature-card {
-        background: white;
+        background: rgba(26, 26, 26, 0.6);
+        backdrop-filter: blur(10px);
         padding: 2rem;
         border-radius: 15px;
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-        transition: transform 0.3s;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(0, 255, 157, 0.1);
+        transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
     }
 
     .feature-card:hover {
         transform: translateY(-5px);
+        box-shadow: 0 8px 30px rgba(0, 255, 157, 0.3);
+        border-color: rgba(0, 255, 157, 0.3);
     }
 
     .feature-icon {
         width: 60px;
         height: 60px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #00ff9d 0%, #00cc7a 100%);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         margin-bottom: 1rem;
+        box-shadow: 0 0 20px rgba(0, 255, 157, 0.3);
     }
 
     .feature-icon svg {
         width: 30px;
         height: 30px;
-        stroke: white;
+        stroke: #0a0a0a;
+        stroke-width: 2.5;
     }
 
     .feature-card h3 {
-        color: #333;
+        color: #e5e5e5;
         margin-bottom: 0.5rem;
         font-size: 1.3rem;
     }
 
     .feature-card p {
-        color: #666;
+        color: #a0a0a0;
         line-height: 1.6;
     }
 </style>
